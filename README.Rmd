@@ -1,49 +1,69 @@
 ---
-title: "長庚大學 大數據分析方法 作業六"
+title: "前10大死因與年齡層之關係"
 output: github_document
 ---
 
-
-## 作業說明 （繳交時請直接刪除這個章節）
-
-作業目的：期末專題暖身
-
-依下列指示，完成期末分析專題作業規劃：
-
-- 訂出分析問題，並將R Markdown的一級標題(第一行的title:)中的"長庚大學 大數據分析方法 作業六"取代為期末專題的分析問題，並在分析議題背景前加上組員姓名 (`10pt`)
-- 分析議題背景 (`10pt`) 與動機 (`10pt`)
-- 資料說明 (`10pt`) 與 載入 (`10pt`)
-- 資料處理與清洗 (`10pt`) 說明 (`10pt`)
-- 對資料們進行探索式資料分析，圖文並茂佳!(`20pt`)
-- 期末專題分析規劃與假設 (`10pt`)
-
 ## 分析議題背景
-背景介紹背景介紹
+B0344240陳衍儒  B0344250歐宜宣
+因生活習慣改變，許多印象中只有老年人才會得到的疾病，竟漸漸出現在年輕人身上。
 
 ## 分析動機
-分析動機分析動機
-
+希望藉由報告研究各年齡層與疾病死因的關聯性。
 ## 使用資料
-說明使用資料們
+我們使用的是100年到104年之全國死因資料
+資料內容包括年度、地區、死因、年齡、性別等。(X100_104)
+另外一個資料表則是地區代碼對應之地區(x1)
 
 載入使用資料們
 ```{r}
 #這是R Code Chunk
+library(readxl)
+X100_104 <- read_excel("C:/Users/Ariel/Desktop/CGUIM_BigData_HW6-b0344290-master/100-104.xlsx")
+ X1 <- read_excel("C:/Users/Ariel/Desktop/CGUIM_BigData_HW6-b0344290-master/1.xlsx")
 ```
 
 ## 資料處理與清洗
-說明處理資料的步驟
+1.我們先將資料跟地區代碼表結合
+2.接著我們將104年的死因資料取出放入data104中
+3.將data104以性別分開
+4.接著分別計算男/女性死因排名
+5.合併兩個表成causeN
+6.將寬表轉成長表
 
 處理資料
 ```{r}
 #這是R Code Chunk
+library(dplyr)
+data <- inner_join(X100_104,X1,by="100county")
+data104 <- data[grepl("104",data$year),]
+data104_m <-  data104[grepl("男",data104$sex),]
+data104_f <- data104[grepl("女",data104$sex),]
+
+causeN_m <- group_by(data104_m,cause) %>%
+ summarise(causeN_m = sum(N))%>%
+  arrange(desc(causeN_m))
+
+causeN_f <- group_by(data104_f,cause) %>%
+  summarise(causeN_f = sum(N))%>%
+  arrange(desc(causeN_f))
+
+causeN <- merge(causeN_m,causeN_f,by="cause",all=TRUE)
+
+library(reshape2)
+data2 <- melt(causeN,id.vars = c("cause"))
+
 ```
 
 ## 探索式資料分析
-圖文並茂圖文並茂
 ```{r}
 #這是R Code Chunk
+library(ggplot2)
+ggplot(data2,
+       aes(x= cause,y= value,
+           color=variable))+
+  geom_point()
+
 ```
 
 ## 期末專題分析規劃
-期末專題要做XXOOO交叉分析
+期末專題要做100~104年死因的排名比較，並增加年齡層之分析
